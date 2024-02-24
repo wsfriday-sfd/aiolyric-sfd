@@ -1,6 +1,8 @@
 """Lyric: Init"""
 from typing import List
 
+import logging
+
 from aiohttp import ClientResponse
 
 from .const import BASE_URL
@@ -25,7 +27,8 @@ class Lyric(LyricBase):
         self._devices_dict: dict = {}
         self._locations: List[LyricLocation] = []
         self._locations_dict: dict = {}
-        self._rooms_dict: dict = {}    
+        self._rooms_dict: dict = {}
+        logging.critical("init!")
 
     @property
     def client_id(self) -> str:
@@ -185,3 +188,34 @@ class Lyric(LyricBase):
             f"{BASE_URL}/devices/thermostats/{device.deviceID}/fan?apikey={self._client_id}&locationId={location.locationID}",
             json=data,
         )
+
+    async def set_room_priority(
+        self,
+        location: LyricLocation,
+        device: LyricDevice,
+        type: str,
+        rooms: list,
+    ) -> ClientResponse:
+        """Set Room Priority."""
+        self.logger.debug("Set Room Priority")
+
+        data = {
+            "currentPriority": {
+                "priorityType": "PickARoom",
+                "selectedRooms": []
+            }
+        }
+
+        if type is not None:
+            data["currentPriority"]["priorityType"] = type
+
+        if rooms is not None:
+            data["currentPriority"]["selectedRooms"] = rooms
+
+        self.logger.debug(data)
+
+        return await self._client.put(
+            f"{BASE_URL}/devices/thermostats/{device.deviceID}/priority?apikey={self._client_id}&locationId={location.locationID}",
+            json=data,
+        )
+
